@@ -8,6 +8,14 @@ input CategoryConfigInput {
   maxMembers: Int
 }
 
+type CategoryTypes {
+  public: Boolean
+}
+
+input CategoryTypesInput {
+  public: Boolean
+}
+
 scalar Duration
 scalar UUID
 
@@ -31,6 +39,21 @@ extend type Query {
   This field is an example of extending the built-in Query type from Ent.
   """
   ping: String!
+
+  """This is the todo item"""
+  todosWithJoins(
+  """Pagination limit."""
+  limit: Int = 100
+
+  """Pagination offset."""
+  offset: Int = 0
+
+  """Ordering options for Todos returned from the connection."""
+  orderBy: [TodoOrder!]
+
+  """Filtering options for Todos returned from the connection."""
+  where: TodoWhereInput
+): TodoList
 }
 
 type Mutation {
@@ -47,4 +70,8 @@ type Custom {
 
 extend input CreateCategoryInput {
   createTodos: [CreateTodoInput!]
+}
+
+interface NamedNode {
+  name: String!
 }

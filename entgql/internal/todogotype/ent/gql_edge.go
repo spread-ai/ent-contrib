@@ -23,7 +23,7 @@ import (
 )
 
 func (c *Category) Todos(
-	ctx context.Context, limit *int, offset *int, orderBy *TodoOrder, where *TodoWhereInput,
+	ctx context.Context, limit *int, offset *int, orderBy []*TodoOrder, where *TodoWhereInput,
 ) (*TodoList, error) {
 	opts := []TodoPaginateOption{
 		WithTodoOrder(orderBy),
@@ -110,7 +110,7 @@ func (t *Todo) Parent(ctx context.Context) (*Todo, error) {
 }
 
 func (t *Todo) Children(
-	ctx context.Context, limit *int, offset *int, orderBy *TodoOrder, where *TodoWhereInput,
+	ctx context.Context, limit *int, offset *int, orderBy []*TodoOrder, where *TodoWhereInput,
 ) (*TodoList, error) {
 	opts := []TodoPaginateOption{
 		WithTodoOrder(orderBy),
