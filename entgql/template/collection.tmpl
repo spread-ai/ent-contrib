@@ -361,6 +361,13 @@ Cond:
 			}
 			query.Where(func(s *sql.Selector) {
 				joinT := sql.Table({{ $.Package }}.{{ $e.TableConstant }})
+				{{- with $tmpls := matchTemplate "dialect/sql/query/eagerloading/join/*" }}
+					{{- range $tmpl := $tmpls }}
+						{{- with extend $ "Edge" $e "Builder" (print $.Name "Query") "Receiver" $receiver }}
+							{{- xtemplate $tmpl . }}
+						{{- end }}
+					{{- end }}
+				{{- end }}
 				s.Join(joinT).On(s.C({{ $edgeid }}), joinT.C({{ $.Package }}.{{ $e.PKConstant }}[{{ $fk1idx }}]))
 				s.Where(sql.InValues(joinT.C({{ $.Package }}.{{ $e.PKConstant }}[{{ $fk2idx }}]), ids...))
 				s.Select(joinT.C({{ $nodeid }}), sql.Count("*"))
