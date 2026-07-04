@@ -53,6 +53,9 @@ type (
 		QueryField *FieldConfig `json:"QueryField,omitempty"`
 		// MutationInputs defines the input types for the mutation.
 		MutationInputs []MutationConfig `json:"MutationInputs,omitempty"`
+		// CollectedFor indicates that this field should be collected when any of the specified GraphQL field names are queried.
+		// This is useful for resolver fields that depend on this field's value.
+		CollectedFor []string `json:"CollectedFor,omitempty"`
 	}
 
 	// Directive to apply on the field/type.
@@ -183,6 +186,32 @@ func MapsTo(names ...string) Annotation {
 	return Annotation{
 		Mapping: names,
 		Unbind:  true, // Unbind because it cant be used with mapping names.
+	}
+}
+
+// CollectedFor returns an annotation indicating that this field should be collected
+// when any of the specified GraphQL field names are queried. This is useful for
+// resolver fields that depend on this field's value.
+//
+// For example, if you have a resolver field `uppercaseName` that depends on the `name` field:
+//
+//	field.String("name").
+//		Annotations(entgql.CollectedFor("uppercaseName"))
+//
+// When `uppercaseName` is queried, the `name` field will be automatically fetched,
+// ensuring `unknownSeen` remains false and the field is available in the resolver.
+//
+// Multiple ent fields can be collected for the same GraphQL field by annotating each
+// of them with the same CollectedFor name. For example, a `fullName` resolver that
+// depends on both `first_name` and `last_name`:
+//
+//	field.String("first_name").
+//		Annotations(entgql.CollectedFor("fullName"))
+//	field.String("last_name").
+//		Annotations(entgql.CollectedFor("fullName"))
+func CollectedFor(names ...string) Annotation {
+	return Annotation{
+		CollectedFor: names,
 	}
 }
 
@@ -505,6 +534,9 @@ func (a Annotation) Merge(other schema.Annotation) schema.Annotation {
 			a.QueryField = &FieldConfig{}
 		}
 		a.QueryField.merge(ant.QueryField)
+	}
+	if len(ant.CollectedFor) > 0 {
+		a.CollectedFor = append(a.CollectedFor, ant.CollectedFor...)
 	}
 	return a
 }

@@ -204,7 +204,9 @@ type CreateTodoInput struct {
 	Status     todo.Status
 	Priority   *int
 	Text       string
+	Name       *string
 	Init       map[string]interface{}
+	Value      *int
 	ParentID   *int
 	ChildIDs   []int
 	CategoryID *int
@@ -218,8 +220,14 @@ func (i *CreateTodoInput) Mutate(m *TodoMutation) {
 		m.SetPriority(*v)
 	}
 	m.SetText(i.Text)
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
 	if v := i.Init; v != nil {
 		m.SetInit(v)
+	}
+	if v := i.Value; v != nil {
+		m.SetValue(*v)
 	}
 	if v := i.ParentID; v != nil {
 		m.SetParentID(*v)
@@ -246,8 +254,11 @@ type UpdateTodoInput struct {
 	Status         *todo.Status
 	Priority       *int
 	Text           *string
+	ClearName      bool
+	Name           *string
 	ClearInit      bool
 	Init           map[string]interface{}
+	Value          *int
 	ClearParent    bool
 	ParentID       *int
 	ClearChildren  bool
@@ -268,11 +279,20 @@ func (i *UpdateTodoInput) Mutate(m *TodoMutation) {
 	if v := i.Text; v != nil {
 		m.SetText(*v)
 	}
+	if i.ClearName {
+		m.ClearName()
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
 	if i.ClearInit {
 		m.ClearInit()
 	}
 	if v := i.Init; v != nil {
 		m.SetInit(v)
+	}
+	if v := i.Value; v != nil {
+		m.SetValue(*v)
 	}
 	if i.ClearParent {
 		m.ClearParent()
@@ -311,6 +331,8 @@ func (c *TodoUpdateOne) SetInput(i UpdateTodoInput) *TodoUpdateOne {
 
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
+	FirstName        *string
+	LastName         *string
 	Name             *string
 	Username         *uuid.UUID
 	Password         *string
@@ -322,6 +344,12 @@ type CreateUserInput struct {
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
 func (i *CreateUserInput) Mutate(m *UserMutation) {
+	if v := i.FirstName; v != nil {
+		m.SetFirstName(*v)
+	}
+	if v := i.LastName; v != nil {
+		m.SetLastName(*v)
+	}
 	if v := i.Name; v != nil {
 		m.SetName(*v)
 	}
@@ -353,6 +381,10 @@ func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
+	ClearFirstName   bool
+	FirstName        *string
+	ClearLastName    bool
+	LastName         *string
 	Name             *string
 	Username         *uuid.UUID
 	ClearPassword    bool
@@ -370,6 +402,18 @@ type UpdateUserInput struct {
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
 func (i *UpdateUserInput) Mutate(m *UserMutation) {
+	if i.ClearFirstName {
+		m.ClearFirstName()
+	}
+	if v := i.FirstName; v != nil {
+		m.SetFirstName(*v)
+	}
+	if i.ClearLastName {
+		m.ClearLastName()
+	}
+	if v := i.LastName; v != nil {
+		m.SetLastName(*v)
+	}
 	if v := i.Name; v != nil {
 		m.SetName(*v)
 	}

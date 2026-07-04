@@ -32,6 +32,11 @@ extend type Category {
 
 extend type Todo {
   extendedField: String
+  uppercaseName: String
+}
+
+extend type User {
+  fullName: String
 }
 
 extend type Query {

@@ -43,6 +43,8 @@ type Todo struct {
 	Priority int `json:"priority,omitempty"`
 	// Text holds the value of the "text" field.
 	Text string `json:"text,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// Blob holds the value of the "blob" field.
 	Blob []byte `json:"blob,omitempty"`
 	// CategoryID holds the value of the "category_id" field.
@@ -53,6 +55,8 @@ type Todo struct {
 	Custom []customstruct.Custom `json:"custom,omitempty"`
 	// Customp holds the value of the "customp" field.
 	Customp []*customstruct.Custom `json:"customp,omitempty"`
+	// Value holds the value of the "value" field.
+	Value int `json:"value,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TodoQuery when eager-loading is set.
 	Edges         TodoEdges `json:"edges"`
@@ -84,12 +88,10 @@ type TodoEdges struct {
 // ParentOrErr returns the Parent value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TodoEdges) ParentOrErr() (*Todo, error) {
-	if e.loadedTypes[0] {
-		if e.Parent == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: todo.Label}
-		}
+	if e.Parent != nil {
 		return e.Parent, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: todo.Label}
 	}
 	return nil, &NotLoadedError{edge: "parent"}
 }
@@ -106,12 +108,10 @@ func (e TodoEdges) ChildrenOrErr() ([]*Todo, error) {
 // CategoryOrErr returns the Category value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TodoEdges) CategoryOrErr() (*Category, error) {
-	if e.loadedTypes[2] {
-		if e.Category == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: category.Label}
-		}
+	if e.Category != nil {
 		return e.Category, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: category.Label}
 	}
 	return nil, &NotLoadedError{edge: "category"}
 }
@@ -119,12 +119,10 @@ func (e TodoEdges) CategoryOrErr() (*Category, error) {
 // SecretOrErr returns the Secret value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TodoEdges) SecretOrErr() (*VerySecret, error) {
-	if e.loadedTypes[3] {
-		if e.Secret == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: verysecret.Label}
-		}
+	if e.Secret != nil {
 		return e.Secret, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: verysecret.Label}
 	}
 	return nil, &NotLoadedError{edge: "secret"}
 }
@@ -136,9 +134,9 @@ func (*Todo) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case todo.FieldBlob, todo.FieldInit, todo.FieldCustom, todo.FieldCustomp:
 			values[i] = new([]byte)
-		case todo.FieldID, todo.FieldPriority, todo.FieldCategoryID:
+		case todo.FieldID, todo.FieldPriority, todo.FieldCategoryID, todo.FieldValue:
 			values[i] = new(sql.NullInt64)
-		case todo.FieldStatus, todo.FieldText:
+		case todo.FieldStatus, todo.FieldText, todo.FieldName:
 			values[i] = new(sql.NullString)
 		case todo.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -193,6 +191,12 @@ func (t *Todo) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Text = value.String
 			}
+		case todo.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				t.Name = value.String
+			}
 		case todo.FieldBlob:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field blob", values[i])
@@ -229,6 +233,12 @@ func (t *Todo) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field customp: %w", err)
 				}
 			}
+		case todo.FieldValue:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field value", values[i])
+			} else if value.Valid {
+				t.Value = int(value.Int64)
+			}
 		case todo.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field project_todos", value)
@@ -257,9 +267,9 @@ func (t *Todo) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the Todo.
+// GetValue returns the ent.Value that was dynamically selected and assigned to the Todo.
 // This includes values selected through modifiers, order, etc.
-func (t *Todo) Value(name string) (ent.Value, error) {
+func (t *Todo) GetValue(name string) (ent.Value, error) {
 	return t.selectValues.Get(name)
 }
 
@@ -318,6 +328,9 @@ func (t *Todo) String() string {
 	builder.WriteString("text=")
 	builder.WriteString(t.Text)
 	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(t.Name)
+	builder.WriteString(", ")
 	builder.WriteString("blob=")
 	builder.WriteString(fmt.Sprintf("%v", t.Blob))
 	builder.WriteString(", ")
@@ -332,6 +345,9 @@ func (t *Todo) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("customp=")
 	builder.WriteString(fmt.Sprintf("%v", t.Customp))
+	builder.WriteString(", ")
+	builder.WriteString("value=")
+	builder.WriteString(fmt.Sprintf("%v", t.Value))
 	builder.WriteByte(')')
 	return builder.String()
 }

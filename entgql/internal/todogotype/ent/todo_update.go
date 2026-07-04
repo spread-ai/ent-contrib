@@ -93,6 +93,26 @@ func (tu *TodoUpdate) SetNillableText(s *string) *TodoUpdate {
 	return tu
 }
 
+// SetName sets the "name" field.
+func (tu *TodoUpdate) SetName(s string) *TodoUpdate {
+	tu.mutation.SetName(s)
+	return tu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tu *TodoUpdate) SetNillableName(s *string) *TodoUpdate {
+	if s != nil {
+		tu.SetName(*s)
+	}
+	return tu
+}
+
+// ClearName clears the value of the "name" field.
+func (tu *TodoUpdate) ClearName() *TodoUpdate {
+	tu.mutation.ClearName()
+	return tu
+}
+
 // SetBlob sets the "blob" field.
 func (tu *TodoUpdate) SetBlob(b []byte) *TodoUpdate {
 	tu.mutation.SetBlob(b)
@@ -150,6 +170,27 @@ func (tu *TodoUpdate) AppendCustomp(c []*customstruct.Custom) *TodoUpdate {
 // ClearCustomp clears the value of the "customp" field.
 func (tu *TodoUpdate) ClearCustomp() *TodoUpdate {
 	tu.mutation.ClearCustomp()
+	return tu
+}
+
+// SetValue sets the "value" field.
+func (tu *TodoUpdate) SetValue(i int) *TodoUpdate {
+	tu.mutation.ResetValue()
+	tu.mutation.SetValue(i)
+	return tu
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (tu *TodoUpdate) SetNillableValue(i *int) *TodoUpdate {
+	if i != nil {
+		tu.SetValue(*i)
+	}
+	return tu
+}
+
+// AddValue adds i to the "value" field.
+func (tu *TodoUpdate) AddValue(i int) *TodoUpdate {
+	tu.mutation.AddValue(i)
 	return tu
 }
 
@@ -310,6 +351,12 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Text(); ok {
 		_spec.SetField(todo.FieldText, field.TypeString, value)
 	}
+	if value, ok := tu.mutation.Name(); ok {
+		_spec.SetField(todo.FieldName, field.TypeString, value)
+	}
+	if tu.mutation.NameCleared() {
+		_spec.ClearField(todo.FieldName, field.TypeString)
+	}
 	if value, ok := tu.mutation.Blob(); ok {
 		_spec.SetField(todo.FieldBlob, field.TypeBytes, value)
 	}
@@ -343,6 +390,12 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if tu.mutation.CustompCleared() {
 		_spec.ClearField(todo.FieldCustomp, field.TypeJSON)
+	}
+	if value, ok := tu.mutation.Value(); ok {
+		_spec.SetField(todo.FieldValue, field.TypeInt, value)
+	}
+	if value, ok := tu.mutation.AddedValue(); ok {
+		_spec.AddField(todo.FieldValue, field.TypeInt, value)
 	}
 	if tu.mutation.ParentCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -516,6 +569,26 @@ func (tuo *TodoUpdateOne) SetNillableText(s *string) *TodoUpdateOne {
 	return tuo
 }
 
+// SetName sets the "name" field.
+func (tuo *TodoUpdateOne) SetName(s string) *TodoUpdateOne {
+	tuo.mutation.SetName(s)
+	return tuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tuo *TodoUpdateOne) SetNillableName(s *string) *TodoUpdateOne {
+	if s != nil {
+		tuo.SetName(*s)
+	}
+	return tuo
+}
+
+// ClearName clears the value of the "name" field.
+func (tuo *TodoUpdateOne) ClearName() *TodoUpdateOne {
+	tuo.mutation.ClearName()
+	return tuo
+}
+
 // SetBlob sets the "blob" field.
 func (tuo *TodoUpdateOne) SetBlob(b []byte) *TodoUpdateOne {
 	tuo.mutation.SetBlob(b)
@@ -573,6 +646,27 @@ func (tuo *TodoUpdateOne) AppendCustomp(c []*customstruct.Custom) *TodoUpdateOne
 // ClearCustomp clears the value of the "customp" field.
 func (tuo *TodoUpdateOne) ClearCustomp() *TodoUpdateOne {
 	tuo.mutation.ClearCustomp()
+	return tuo
+}
+
+// SetValue sets the "value" field.
+func (tuo *TodoUpdateOne) SetValue(i int) *TodoUpdateOne {
+	tuo.mutation.ResetValue()
+	tuo.mutation.SetValue(i)
+	return tuo
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (tuo *TodoUpdateOne) SetNillableValue(i *int) *TodoUpdateOne {
+	if i != nil {
+		tuo.SetValue(*i)
+	}
+	return tuo
+}
+
+// AddValue adds i to the "value" field.
+func (tuo *TodoUpdateOne) AddValue(i int) *TodoUpdateOne {
+	tuo.mutation.AddValue(i)
 	return tuo
 }
 
@@ -763,6 +857,12 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 	if value, ok := tuo.mutation.Text(); ok {
 		_spec.SetField(todo.FieldText, field.TypeString, value)
 	}
+	if value, ok := tuo.mutation.Name(); ok {
+		_spec.SetField(todo.FieldName, field.TypeString, value)
+	}
+	if tuo.mutation.NameCleared() {
+		_spec.ClearField(todo.FieldName, field.TypeString)
+	}
 	if value, ok := tuo.mutation.Blob(); ok {
 		_spec.SetField(todo.FieldBlob, field.TypeBytes, value)
 	}
@@ -796,6 +896,12 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 	}
 	if tuo.mutation.CustompCleared() {
 		_spec.ClearField(todo.FieldCustomp, field.TypeJSON)
+	}
+	if value, ok := tuo.mutation.Value(); ok {
+		_spec.SetField(todo.FieldValue, field.TypeInt, value)
+	}
+	if value, ok := tuo.mutation.AddedValue(); ok {
+		_spec.AddField(todo.FieldValue, field.TypeInt, value)
 	}
 	if tuo.mutation.ParentCleared() {
 		edge := &sqlgraph.EdgeSpec{

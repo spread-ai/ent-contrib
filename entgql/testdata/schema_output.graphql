@@ -74,7 +74,9 @@ input CreateTodoInput {
   status: TodoStatus!
   priority: Int
   text: String!
+  name: String
   init: Map
+  value: Int
   parentID: ID
   childIDs: [ID!]
   categoryID: ID
@@ -84,6 +86,8 @@ input CreateTodoInput {
 CreateUserInput is used for create User object.
 """
 input CreateUserInput {
+  firstName: String
+  lastName: String
   name: String
   username: UUID
   password: String
@@ -164,12 +168,14 @@ type Todo {
   status: TodoStatus!
   priorityOrder: Int! @goField(name: "Priority", forceResolver: false)
   text: String!
+  name: String
   categoryID: ID
   category_id: ID
   categoryX: ID @goField(name: "CategoryID", forceResolver: false)
   init: Map
   custom: [Custom!]
   customp: [Custom]
+  value: Int!
   """
   Todo parent
   """
@@ -256,8 +262,11 @@ input UpdateTodoInput {
   status: TodoStatus
   priority: Int
   text: String
+  name: String
+  clearName: Boolean
   init: Map
   clearInit: Boolean
+  value: Int
   parentID: ID
   clearParent: Boolean
   addChildIDs: [ID!]
@@ -270,6 +279,10 @@ input UpdateTodoInput {
 UpdateUserInput is used for update User object.
 """
 input UpdateUserInput {
+  firstName: String
+  clearFirstName: Boolean
+  lastName: String
+  clearLastName: Boolean
   name: String
   username: UUID
   password: String
@@ -286,6 +299,8 @@ input UpdateUserInput {
 }
 type User {
   id: ID!
+  firstName: String
+  lastName: String
   name: String!
   username: UUID!
   requiredMetadata: Map!

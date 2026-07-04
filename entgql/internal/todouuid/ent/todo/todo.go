@@ -40,6 +40,8 @@ const (
 	FieldPriority = "priority"
 	// FieldText holds the string denoting the text field in the database.
 	FieldText = "text"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldBlob holds the string denoting the blob field in the database.
 	FieldBlob = "blob"
 	// FieldInit holds the string denoting the init field in the database.
@@ -48,6 +50,8 @@ const (
 	FieldCustom = "custom"
 	// FieldCustomp holds the string denoting the customp field in the database.
 	FieldCustomp = "customp"
+	// FieldValue holds the string denoting the value field in the database.
+	FieldValue = "value"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
@@ -91,10 +95,12 @@ var Columns = []string{
 	FieldStatus,
 	FieldPriority,
 	FieldText,
+	FieldName,
 	FieldBlob,
 	FieldInit,
 	FieldCustom,
 	FieldCustomp,
+	FieldValue,
 	FieldCategoryID,
 }
 
@@ -127,6 +133,8 @@ var (
 	DefaultPriority int
 	// TextValidator is a validator for the "text" field. It is called by the builders before save.
 	TextValidator func(string) error
+	// DefaultValue holds the default value on creation for the "value" field.
+	DefaultValue int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -181,6 +189,16 @@ func ByPriority(opts ...sql.OrderTermOption) OrderOption {
 // ByText orders the results by the text field.
 func ByText(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldText, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByValue orders the results by the value field.
+func ByValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValue, opts...).ToFunc()
 }
 
 // ByCategoryID orders the results by the category_id field.

@@ -26,13 +26,15 @@ type CategoryTypesInput struct {
 
 // CreateUserInput is used for create User object.
 type CreateUserInput struct {
-	Name             *string                `json:"name,omitempty"`
-	Username         *string                `json:"username,omitempty"`
-	Password         *string                `json:"password,omitempty"`
-	RequiredMetadata map[string]interface{} `json:"requiredMetadata"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
-	GroupIDs         []string               `json:"groupIDs,omitempty"`
-	FriendIDs        []string               `json:"friendIDs,omitempty"`
+	FirstName        *string        `json:"firstName,omitempty"`
+	LastName         *string        `json:"lastName,omitempty"`
+	Name             *string        `json:"name,omitempty"`
+	Username         *string        `json:"username,omitempty"`
+	Password         *string        `json:"password,omitempty"`
+	RequiredMetadata map[string]any `json:"requiredMetadata"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+	GroupIDs         []string       `json:"groupIDs,omitempty"`
+	FriendIDs        []string       `json:"friendIDs,omitempty"`
 }
 
 type OneToMany struct {
@@ -178,19 +180,23 @@ type UpdateFriendshipInput struct {
 
 // UpdateUserInput is used for update User object.
 type UpdateUserInput struct {
-	Name             *string                `json:"name,omitempty"`
-	Username         *string                `json:"username,omitempty"`
-	Password         *string                `json:"password,omitempty"`
-	ClearPassword    *bool                  `json:"clearPassword,omitempty"`
-	RequiredMetadata map[string]interface{} `json:"requiredMetadata,omitempty"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
-	ClearMetadata    *bool                  `json:"clearMetadata,omitempty"`
-	AddGroupIDs      []string               `json:"addGroupIDs,omitempty"`
-	RemoveGroupIDs   []string               `json:"removeGroupIDs,omitempty"`
-	ClearGroups      *bool                  `json:"clearGroups,omitempty"`
-	AddFriendIDs     []string               `json:"addFriendIDs,omitempty"`
-	RemoveFriendIDs  []string               `json:"removeFriendIDs,omitempty"`
-	ClearFriends     *bool                  `json:"clearFriends,omitempty"`
+	FirstName        *string        `json:"firstName,omitempty"`
+	ClearFirstName   *bool          `json:"clearFirstName,omitempty"`
+	LastName         *string        `json:"lastName,omitempty"`
+	ClearLastName    *bool          `json:"clearLastName,omitempty"`
+	Name             *string        `json:"name,omitempty"`
+	Username         *string        `json:"username,omitempty"`
+	Password         *string        `json:"password,omitempty"`
+	ClearPassword    *bool          `json:"clearPassword,omitempty"`
+	RequiredMetadata map[string]any `json:"requiredMetadata,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+	ClearMetadata    *bool          `json:"clearMetadata,omitempty"`
+	AddGroupIDs      []string       `json:"addGroupIDs,omitempty"`
+	RemoveGroupIDs   []string       `json:"removeGroupIDs,omitempty"`
+	ClearGroups      *bool          `json:"clearGroups,omitempty"`
+	AddFriendIDs     []string       `json:"addFriendIDs,omitempty"`
+	RemoveFriendIDs  []string       `json:"removeFriendIDs,omitempty"`
+	ClearFriends     *bool          `json:"clearFriends,omitempty"`
 }
 
 // Properties by which OneToMany connections can be ordered.
@@ -216,7 +222,7 @@ func (e OneToManyOrderField) String() string {
 	return string(e)
 }
 
-func (e *OneToManyOrderField) UnmarshalGQL(v interface{}) error {
+func (e *OneToManyOrderField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

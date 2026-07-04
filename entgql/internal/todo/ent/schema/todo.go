@@ -60,6 +60,11 @@ func (Todo) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("TEXT"),
 			),
+		field.String("name").
+			Optional().
+			Annotations(
+				entgql.CollectedFor("uppercaseName"),
+			),
 		field.Bytes("blob").
 			Annotations(
 				entgql.Skip(),
@@ -86,6 +91,8 @@ func (Todo) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Optional(),
+		field.Int("value").
+			Default(0),
 	}
 }
 

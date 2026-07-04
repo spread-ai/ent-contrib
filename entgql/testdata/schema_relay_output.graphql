@@ -125,15 +125,6 @@ type Category implements Node {
   ): CategoryList
 }
 """
-An edge in a connection.
-"""
-type CategoryEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: Category
-}
-"""
 A connection to a list of items.
 """
 type CategoryList {
@@ -145,10 +136,6 @@ type CategoryList {
   The list of data items.
   """
   items: [Category]!
-  """
-  The list of edges where each edge holds a data node and possibly metadata.
-  """
-  edges: [CategoryEdge]
 }
 """
 Ordering options for Category connections
@@ -293,7 +280,9 @@ input CreateTodoInput {
   status: TodoStatus!
   priority: Int
   text: String!
+  name: String
   init: Map
+  value: Int
   parentID: ID
   childIDs: [ID!]
   categoryID: ID
@@ -303,6 +292,8 @@ input CreateTodoInput {
 CreateUserInput is used for create User object.
 """
 input CreateUserInput {
+  firstName: String
+  lastName: String
   name: String
   username: UUID
   password: String
@@ -320,15 +311,6 @@ type Friendship implements Node {
   friend: User!
 }
 """
-An edge in a connection.
-"""
-type FriendshipEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: Friendship
-}
-"""
 A connection to a list of items.
 """
 type FriendshipList {
@@ -340,10 +322,6 @@ type FriendshipList {
   The list of data items.
   """
   items: [Friendship]!
-  """
-  The list of edges where each edge holds a data node and possibly metadata.
-  """
-  edges: [FriendshipEdge]
 }
 """
 FriendshipWhereInput is used for filtering Friendship objects.
@@ -401,15 +379,6 @@ type Group implements Node & NamedNode @hasPermissions(permissions: ["ADMIN","MO
   ): UserList
 }
 """
-An edge in a connection.
-"""
-type GroupEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: Group
-}
-"""
 A connection to a list of items.
 """
 type GroupList {
@@ -421,10 +390,6 @@ type GroupList {
   The list of data items.
   """
   items: [Group]!
-  """
-  The list of edges where each edge holds a data node and possibly metadata.
-  """
-  edges: [GroupEdge]
 }
 """
 GroupWhereInput is used for filtering Group objects.
@@ -478,15 +443,6 @@ type OneToMany implements Node {
   children: [OneToMany!]
 }
 """
-An edge in a connection.
-"""
-type OneToManyEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: OneToMany
-}
-"""
 A connection to a list of items.
 """
 type OneToManyList {
@@ -498,10 +454,6 @@ type OneToManyList {
   The list of data items.
   """
   items: [OneToMany]!
-  """
-  The list of edges where each edge holds a data node and possibly metadata.
-  """
-  edges: [OneToManyEdge]
 }
 """
 Ordering options for OneToMany connections
@@ -806,12 +758,14 @@ type Todo implements Node {
   status: TodoStatus!
   priorityOrder: Int! @goField(name: "Priority", forceResolver: false)
   text: String!
+  name: String
   categoryID: ID
   category_id: ID
   categoryX: ID @goField(name: "CategoryID", forceResolver: false)
   init: Map
   custom: [Custom!]
   customp: [Custom]
+  value: Int!
   """
   Todo parent
   """
@@ -843,15 +797,6 @@ type Todo implements Node {
   category: Category
 }
 """
-An edge in a connection.
-"""
-type TodoEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: Todo
-}
-"""
 A connection to a list of items.
 """
 type TodoList {
@@ -863,10 +808,6 @@ type TodoList {
   The list of data items.
   """
   items: [Todo]!
-  """
-  The list of edges where each edge holds a data node and possibly metadata.
-  """
-  edges: [TodoEdge]
 }
 """
 Ordering options for Todo connections
@@ -965,6 +906,24 @@ input TodoWhereInput {
   textEqualFold: String
   textContainsFold: String
   """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameIsNil: Boolean
+  nameNotNil: Boolean
+  nameEqualFold: String
+  nameContainsFold: String
+  """
   category_id field predicates
   """
   categoryID: ID
@@ -973,6 +932,17 @@ input TodoWhereInput {
   categoryIDNotIn: [ID!]
   categoryIDIsNil: Boolean
   categoryIDNotNil: Boolean
+  """
+  value field predicates
+  """
+  value: Int
+  valueNEQ: Int
+  valueIn: [Int!]
+  valueNotIn: [Int!]
+  valueGT: Int
+  valueGTE: Int
+  valueLT: Int
+  valueLTE: Int
   """
   parent edge predicates
   """
@@ -1032,8 +1002,11 @@ input UpdateTodoInput {
   status: TodoStatus
   priority: Int
   text: String
+  name: String
+  clearName: Boolean
   init: Map
   clearInit: Boolean
+  value: Int
   parentID: ID
   clearParent: Boolean
   addChildIDs: [ID!]
@@ -1046,6 +1019,10 @@ input UpdateTodoInput {
 UpdateUserInput is used for update User object.
 """
 input UpdateUserInput {
+  firstName: String
+  clearFirstName: Boolean
+  lastName: String
+  clearLastName: Boolean
   name: String
   username: UUID
   password: String
@@ -1062,6 +1039,8 @@ input UpdateUserInput {
 }
 type User implements Node {
   id: ID!
+  firstName: String
+  lastName: String
   name: String!
   username: UUID!
   requiredMetadata: Map!
@@ -1124,15 +1103,6 @@ type User implements Node {
   ): FriendshipList
 }
 """
-An edge in a connection.
-"""
-type UserEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: User
-}
-"""
 A connection to a list of items.
 """
 type UserList {
@@ -1144,10 +1114,6 @@ type UserList {
   The list of data items.
   """
   items: [User]!
-  """
-  The list of edges where each edge holds a data node and possibly metadata.
-  """
-  edges: [UserEdge]
 }
 """
 Ordering options for User connections
@@ -1186,6 +1152,42 @@ input UserWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """
+  first_name field predicates
+  """
+  firstName: String
+  firstNameNEQ: String
+  firstNameIn: [String!]
+  firstNameNotIn: [String!]
+  firstNameGT: String
+  firstNameGTE: String
+  firstNameLT: String
+  firstNameLTE: String
+  firstNameContains: String
+  firstNameHasPrefix: String
+  firstNameHasSuffix: String
+  firstNameIsNil: Boolean
+  firstNameNotNil: Boolean
+  firstNameEqualFold: String
+  firstNameContainsFold: String
+  """
+  last_name field predicates
+  """
+  lastName: String
+  lastNameNEQ: String
+  lastNameIn: [String!]
+  lastNameNotIn: [String!]
+  lastNameGT: String
+  lastNameGTE: String
+  lastNameLT: String
+  lastNameLTE: String
+  lastNameContains: String
+  lastNameHasPrefix: String
+  lastNameHasSuffix: String
+  lastNameIsNil: Boolean
+  lastNameNotNil: Boolean
+  lastNameEqualFold: String
+  lastNameContainsFold: String
   """
   name field predicates
   """

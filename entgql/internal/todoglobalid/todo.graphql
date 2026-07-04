@@ -1,0 +1,77 @@
+directive @hasPermissions(permissions: [String!]!) on OBJECT | FIELD_DEFINITION
+
+type CategoryConfig {
+  maxMembers: Int
+}
+
+input CategoryConfigInput {
+  maxMembers: Int
+}
+
+type CategoryTypes {
+  public: Boolean
+}
+
+input CategoryTypesInput {
+  public: Boolean
+}
+
+scalar Duration
+scalar UUID
+
+extend input TodoWhereInput {
+  createdToday: Boolean
+}
+
+extend type Category {
+  """
+  Expose the TODOS_COUNT order field in case it was added in orderBy.
+  """
+  todosCount: Int
+}
+
+extend type Todo {
+  extendedField: String
+}
+
+extend type Query {
+  """
+  This field is an example of extending the built-in Query type from Ent.
+  """
+  ping: String!
+
+  """This is the todo item"""
+  todosWithJoins(
+  """Pagination limit."""
+  limit: Int = 100
+
+  """Pagination offset."""
+  offset: Int = 0
+
+  """Ordering options for Todos returned from the connection."""
+  orderBy: [TodoOrder!]
+
+  """Filtering options for Todos returned from the connection."""
+  where: TodoWhereInput
+): TodoList
+}
+
+type Mutation {
+  createCategory(input: CreateCategoryInput!): Category!
+  createTodo(input: CreateTodoInput!): Todo!
+  updateTodo(id: ID!, input: UpdateTodoInput!): Todo!
+  clearTodos: Int!
+  updateFriendship(id: ID!, input: UpdateFriendshipInput!): Friendship!
+}
+
+type Custom {
+  info: String!
+}
+
+extend input CreateCategoryInput {
+  createTodos: [CreateTodoInput!]
+}
+
+interface NamedNode {
+  name: String!
+}

@@ -280,7 +280,9 @@ input CreateTodoInput {
   status: TodoStatus!
   priority: Int
   text: String!
+  name: String
   init: Map
+  value: Int
   parentID: ID
   childIDs: [ID!]
   categoryID: ID
@@ -290,6 +292,8 @@ input CreateTodoInput {
 CreateUserInput is used for create User object.
 """
 input CreateUserInput {
+  firstName: String
+  lastName: String
   name: String
   username: UUID
   password: String
@@ -754,12 +758,14 @@ type Todo implements Node {
   status: TodoStatus!
   priorityOrder: Int! @goField(name: "Priority", forceResolver: false)
   text: String!
+  name: String
   categoryID: ID
   category_id: ID
   categoryX: ID @goField(name: "CategoryID", forceResolver: false)
   init: Map
   custom: [Custom!]
   customp: [Custom]
+  value: Int!
   """
   Todo parent
   """
@@ -900,6 +906,24 @@ input TodoWhereInput {
   textEqualFold: String
   textContainsFold: String
   """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameIsNil: Boolean
+  nameNotNil: Boolean
+  nameEqualFold: String
+  nameContainsFold: String
+  """
   category_id field predicates
   """
   categoryID: ID
@@ -908,6 +932,17 @@ input TodoWhereInput {
   categoryIDNotIn: [ID!]
   categoryIDIsNil: Boolean
   categoryIDNotNil: Boolean
+  """
+  value field predicates
+  """
+  value: Int
+  valueNEQ: Int
+  valueIn: [Int!]
+  valueNotIn: [Int!]
+  valueGT: Int
+  valueGTE: Int
+  valueLT: Int
+  valueLTE: Int
   """
   parent edge predicates
   """
@@ -967,8 +1002,11 @@ input UpdateTodoInput {
   status: TodoStatus
   priority: Int
   text: String
+  name: String
+  clearName: Boolean
   init: Map
   clearInit: Boolean
+  value: Int
   parentID: ID
   clearParent: Boolean
   addChildIDs: [ID!]
@@ -981,6 +1019,10 @@ input UpdateTodoInput {
 UpdateUserInput is used for update User object.
 """
 input UpdateUserInput {
+  firstName: String
+  clearFirstName: Boolean
+  lastName: String
+  clearLastName: Boolean
   name: String
   username: UUID
   password: String
@@ -997,6 +1039,8 @@ input UpdateUserInput {
 }
 type User implements Node {
   id: ID!
+  firstName: String
+  lastName: String
   name: String!
   username: UUID!
   requiredMetadata: Map!
@@ -1108,6 +1152,42 @@ input UserWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """
+  first_name field predicates
+  """
+  firstName: String
+  firstNameNEQ: String
+  firstNameIn: [String!]
+  firstNameNotIn: [String!]
+  firstNameGT: String
+  firstNameGTE: String
+  firstNameLT: String
+  firstNameLTE: String
+  firstNameContains: String
+  firstNameHasPrefix: String
+  firstNameHasSuffix: String
+  firstNameIsNil: Boolean
+  firstNameNotNil: Boolean
+  firstNameEqualFold: String
+  firstNameContainsFold: String
+  """
+  last_name field predicates
+  """
+  lastName: String
+  lastNameNEQ: String
+  lastNameIn: [String!]
+  lastNameNotIn: [String!]
+  lastNameGT: String
+  lastNameGTE: String
+  lastNameLT: String
+  lastNameLTE: String
+  lastNameContains: String
+  lastNameHasPrefix: String
+  lastNameHasSuffix: String
+  lastNameIsNil: Boolean
+  lastNameNotNil: Boolean
+  lastNameEqualFold: String
+  lastNameContainsFold: String
   """
   name field predicates
   """

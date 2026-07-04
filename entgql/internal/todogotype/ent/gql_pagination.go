@@ -117,6 +117,25 @@ func hasCollectedField(ctx context.Context, path ...string) bool {
 	return collectedField(ctx, path...) != nil
 }
 
+func collectedFieldFrom(parent graphql.CollectedField, oc *graphql.OperationContext, satisfies []string, path ...string) *graphql.CollectedField {
+	field := parent
+walk:
+	for _, name := range path {
+		for _, f := range graphql.CollectFields(oc, field.Selections, satisfies) {
+			if f.Alias == name {
+				field = f
+				continue walk
+			}
+		}
+		return nil
+	}
+	return &field
+}
+
+func hasCollectedFieldFrom(parent graphql.CollectedField, oc *graphql.OperationContext, satisfies []string, path ...string) bool {
+	return collectedFieldFrom(parent, oc, satisfies, path...) != nil
+}
+
 const (
 	edgesField      = "edges"
 	itemsField      = "items"
@@ -2290,7 +2309,7 @@ var (
 	// TodoOrderFieldParentStatus orders by PARENT_STATUS.
 	TodoOrderFieldParentStatus = &TodoOrderField{
 		Value: func(t *Todo) (ent.Value, error) {
-			return t.Value("parent_status")
+			return t.GetValue("parent_status")
 		},
 		column: "parent_status",
 		toTerm: func(opts ...sql.OrderTermOption) todo.OrderOption {
@@ -2300,7 +2319,7 @@ var (
 			)
 		},
 		toCursor: func(t *Todo) Cursor {
-			cv, _ := t.Value("parent_status")
+			cv, _ := t.GetValue("parent_status")
 			return Cursor{
 				ID:    t.ID,
 				Value: cv,
@@ -2310,7 +2329,7 @@ var (
 	// TodoOrderFieldChildrenCount orders by CHILDREN_COUNT.
 	TodoOrderFieldChildrenCount = &TodoOrderField{
 		Value: func(t *Todo) (ent.Value, error) {
-			return t.Value("children_count")
+			return t.GetValue("children_count")
 		},
 		column: "children_count",
 		toTerm: func(opts ...sql.OrderTermOption) todo.OrderOption {
@@ -2319,7 +2338,7 @@ var (
 			)
 		},
 		toCursor: func(t *Todo) Cursor {
-			cv, _ := t.Value("children_count")
+			cv, _ := t.GetValue("children_count")
 			return Cursor{
 				ID:    t.ID,
 				Value: cv,
@@ -2329,7 +2348,7 @@ var (
 	// TodoOrderFieldCategoryText orders by CATEGORY_TEXT.
 	TodoOrderFieldCategoryText = &TodoOrderField{
 		Value: func(t *Todo) (ent.Value, error) {
-			return t.Value("category_text")
+			return t.GetValue("category_text")
 		},
 		column: "category_text",
 		toTerm: func(opts ...sql.OrderTermOption) todo.OrderOption {
@@ -2339,7 +2358,7 @@ var (
 			)
 		},
 		toCursor: func(t *Todo) Cursor {
-			cv, _ := t.Value("category_text")
+			cv, _ := t.GetValue("category_text")
 			return Cursor{
 				ID:    t.ID,
 				Value: cv,
