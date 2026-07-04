@@ -107,7 +107,7 @@ func newServiceGenerator(plugin *protogen.Plugin, file *protogen.File, graph *ge
 	}
 	return &serviceGenerator{
 		GeneratedFile: g,
-		EntPackage:    protogen.GoImportPath(graph.Config.Package),
+		EntPackage:    protogen.GoImportPath(graph.Package),
 		File:          file,
 		Service:       service,
 		EntType:       typ,

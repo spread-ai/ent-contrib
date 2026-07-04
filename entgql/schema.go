@@ -724,10 +724,10 @@ func (e *schemaGenerator) typeFromField(gqlType string, f *gen.Field, ant *Annot
 		return namedType(scalar, f.Optional), nil
 	}
 
-	switch t := f.Type.Type; {
-	case t == field.TypeJSON:
+	switch t := f.Type.Type; t {
+	case field.TypeJSON:
 		return nil, fmt.Errorf("entgql: json type not implemented without setting an entgql.Type() annotation")
-	case t == field.TypeOther:
+	case field.TypeOther:
 		return nil, fmt.Errorf("entgql: other type must have typed defined")
 	default:
 		return nil, fmt.Errorf("entgql: unexpected type: %s", t.String())

@@ -205,7 +205,7 @@ func (a *Adapter) parse() error {
 
 func (a *Adapter) goPackageName(protoPkgName string) string {
 	// TODO(rotemtam): make this configurable from an annotation
-	entBase := a.graph.Config.Package
+	entBase := a.graph.Package
 	slashed := strings.ReplaceAll(protoPkgName, ".", "/")
 	return path.Join(entBase, "proto", slashed)
 }

@@ -216,10 +216,10 @@ func (m *MutationDescriptor) Input() (string, error) {
 // Builders return the builder's names to apply the input.
 func (m *MutationDescriptor) Builders() []string {
 	if m.IsCreate {
-		return []string{m.Type.CreateName()}
+		return []string{m.CreateName()}
 	}
 
-	return []string{m.Type.UpdateName(), m.Type.UpdateOneName()}
+	return []string{m.UpdateName(), m.UpdateOneName()}
 }
 
 // InputFieldDescriptor holds the information
@@ -245,8 +245,8 @@ func (f *InputFieldDescriptor) IsPointer() bool {
 
 // InputFields returns the list of fields in the input type.
 func (m *MutationDescriptor) InputFields() ([]*InputFieldDescriptor, error) {
-	fields := make([]*InputFieldDescriptor, 0, len(m.Type.Fields))
-	for _, f := range m.Type.Fields {
+	fields := make([]*InputFieldDescriptor, 0, len(m.Fields))
+	for _, f := range m.Fields {
 		ant, err := annotation(f.Annotations)
 		if err != nil {
 			return nil, err
@@ -271,8 +271,8 @@ func (m *MutationDescriptor) InputFields() ([]*InputFieldDescriptor, error) {
 // NOTE(giautm): This method should refactor to
 // return a list of InputFieldDescriptor.
 func (m *MutationDescriptor) InputEdges() ([]*gen.Edge, error) {
-	edges := make([]*gen.Edge, 0, len(m.Type.Edges))
-	for _, e := range m.Type.Edges {
+	edges := make([]*gen.Edge, 0, len(m.Edges))
+	for _, e := range m.Edges {
 		ant, err := annotation(e.Annotations)
 		if err != nil {
 			return nil, err

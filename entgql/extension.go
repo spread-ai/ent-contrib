@@ -270,7 +270,7 @@ func (e *Extension) genSchemaHook() gen.Hook {
 					}
 				}
 			}
-			if !(e.genSchema || e.genWhereInput || e.genMutations) {
+			if !e.genSchema && !e.genWhereInput && !e.genMutations {
 				return nil
 			}
 			schema, err := e.BuildSchema(g)

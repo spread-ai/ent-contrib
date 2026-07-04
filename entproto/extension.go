@@ -120,7 +120,7 @@ func Generate(g *gen.Graph) error {
 }
 
 func (e *Extension) generate(g *gen.Graph) error {
-	entProtoDir := path.Join(g.Config.Target, "proto")
+	entProtoDir := path.Join(g.Target, "proto")
 	if e.protoDir != "" {
 		entProtoDir = e.protoDir
 	}
@@ -160,7 +160,7 @@ func (e *Extension) generate(g *gen.Graph) error {
 				if err != nil {
 					return fmt.Errorf("entproto: failed generating generate.go file for %q: %w", protoFilePath, err)
 				}
-				toBase, err := filepath.Rel(abs, g.Config.Target)
+				toBase, err := filepath.Rel(abs, g.Target)
 				if err != nil {
 					return fmt.Errorf("entproto: failed generating generate.go file for %q: %w", protoFilePath, err)
 				}

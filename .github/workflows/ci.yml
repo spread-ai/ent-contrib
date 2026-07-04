@@ -18,12 +18,9 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run linters
-        uses: golangci/golangci-lint-action@v6.1.1
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.62.2
-          # Full-repo runs choke on this repo's size (the 2026 upstream sync
-          # made the job die without output); lint the changed diff only.
-          only-new-issues: true
+          version: v2.4.0
   test:
     runs-on: ubuntu-latest
     strategy:
