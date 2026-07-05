@@ -71,10 +71,16 @@ var (
 	WherePTemplate = parseT("template/where_p.tmpl")
 
 	// FederationEntityTemplate emits an IsEntity() method (fedruntime.Entity) on
-	// every generated model. Opt-in for federated subgraphs:
+	// every generated model. Opt-in for federated subgraphs — inject it through
+	// the entc template pool:
 	//
-	//	entgql.WithTemplates(append(entgql.AllTemplates, entgql.FederationEntityTemplate)...)
+	//	entc.Generate("./ent/schema", &gen.Config{
+	//		Templates: []*gen.Template{entgql.FederationEntityTemplate},
+	//	}, entc.Extensions(ex))
 	//
+	// Do NOT pass it via entgql.WithTemplates: that replaces the extension's
+	// template set wholesale and silently drops the where-input template that
+	// WithWhereInputs appends (where-filter arguments vanish from edges).
 	// (Absorbed from the spread-ai/ent-templates repo.)
 	FederationEntityTemplate = parseT("template/gql_federation.tmpl")
 
