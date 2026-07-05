@@ -8055,7 +8055,7 @@ func (ec *executionContext) _Todo_init(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(map[string]interface{})
+	res := resTmp.(map[string]any)
 	fc.Result = res
 	return ec.marshalOMap2map(ctx, field.Selections, res)
 }
