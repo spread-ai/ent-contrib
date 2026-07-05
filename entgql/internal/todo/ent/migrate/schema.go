@@ -41,6 +41,7 @@ var (
 		{Name: "text", Type: field.TypeString, Size: 2147483647},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"ENABLED", "DISABLED"}},
 		{Name: "config", Type: field.TypeOther, Nullable: true, SchemaType: map[string]string{"sqlite3": "json"}},
+		{Name: "types", Type: field.TypeJSON, Nullable: true},
 		{Name: "duration", Type: field.TypeInt64, Nullable: true},
 		{Name: "count", Type: field.TypeUint64, Nullable: true},
 		{Name: "strings", Type: field.TypeJSON, Nullable: true},
@@ -134,10 +135,12 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"IN_PROGRESS", "COMPLETED", "PENDING"}},
 		{Name: "priority", Type: field.TypeInt, Default: 0},
 		{Name: "text", Type: field.TypeString, Size: 2147483647},
+		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "blob", Type: field.TypeBytes, Nullable: true},
 		{Name: "init", Type: field.TypeJSON, Nullable: true},
 		{Name: "custom", Type: field.TypeJSON, Nullable: true},
 		{Name: "customp", Type: field.TypeJSON, Nullable: true},
+		{Name: "value", Type: field.TypeInt, Default: 0},
 		{Name: "category_id", Type: field.TypeInt, Nullable: true},
 		{Name: "project_todos", Type: field.TypeInt, Nullable: true},
 		{Name: "todo_children", Type: field.TypeInt, Nullable: true},
@@ -151,25 +154,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "todos_categories_todos",
-				Columns:    []*schema.Column{TodosColumns[9]},
+				Columns:    []*schema.Column{TodosColumns[11]},
 				RefColumns: []*schema.Column{CategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "todos_projects_todos",
-				Columns:    []*schema.Column{TodosColumns[10]},
+				Columns:    []*schema.Column{TodosColumns[12]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "todos_todos_children",
-				Columns:    []*schema.Column{TodosColumns[11]},
+				Columns:    []*schema.Column{TodosColumns[13]},
 				RefColumns: []*schema.Column{TodosColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "todos_very_secrets_secret",
-				Columns:    []*schema.Column{TodosColumns[12]},
+				Columns:    []*schema.Column{TodosColumns[14]},
 				RefColumns: []*schema.Column{VerySecretsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -178,9 +181,12 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "first_name", Type: field.TypeString, Nullable: true},
+		{Name: "last_name", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString, Default: "Anonymous"},
 		{Name: "username", Type: field.TypeUUID},
 		{Name: "password", Type: field.TypeString, Nullable: true},
+		{Name: "required_metadata", Type: field.TypeJSON},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
@@ -199,6 +205,17 @@ var (
 		Name:       "very_secrets",
 		Columns:    VerySecretsColumns,
 		PrimaryKey: []*schema.Column{VerySecretsColumns[0]},
+	}
+	// WorkspacesColumns holds the columns for the "workspaces" table.
+	WorkspacesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+	}
+	// WorkspacesTable holds the schema information for the "workspaces" table.
+	WorkspacesTable = &schema.Table{
+		Name:       "workspaces",
+		Columns:    WorkspacesColumns,
+		PrimaryKey: []*schema.Column{WorkspacesColumns[0]},
 	}
 	// CategorySubCategoriesColumns holds the columns for the "category_sub_categories" table.
 	CategorySubCategoriesColumns = []*schema.Column{
@@ -261,6 +278,7 @@ var (
 		TodosTable,
 		UsersTable,
 		VerySecretsTable,
+		WorkspacesTable,
 		CategorySubCategoriesTable,
 		UserGroupsTable,
 	}

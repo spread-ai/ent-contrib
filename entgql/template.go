@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
@@ -30,7 +31,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/ast"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -78,7 +78,9 @@ var (
 	// TemplateFuncs contains the extra template functions used by entgql.
 	TemplateFuncs = template.FuncMap{
 		"fieldCollections":    fieldCollections,
+		"fieldCollectorCases": fieldCollectorCases,
 		"fieldMapping":        fieldMapping,
+		"fieldCollectedFor":   fieldCollectedFor,
 		"filterEdges":         filterEdges,
 		"filterFields":        filterFields,
 		"filterNodes":         filterNodes,
@@ -89,6 +91,8 @@ var (
 		"isRelayConn":         isRelayConn,
 		"isSkipMode":          isSkipMode,
 		"mutationInputs":      mutationInputs,
+		"nodeImplementors":    nodeImplementors,
+		"nodeImplementorsVar": nodeImplementorsVar,
 		"nodePaginationNames": nodePaginationNames,
 		"orderFields":         orderFields,
 		"skipMode":            skipModeFromString,
@@ -212,10 +216,10 @@ func (m *MutationDescriptor) Input() (string, error) {
 // Builders return the builder's names to apply the input.
 func (m *MutationDescriptor) Builders() []string {
 	if m.IsCreate {
-		return []string{m.Type.CreateName()}
+		return []string{m.CreateName()}
 	}
 
-	return []string{m.Type.UpdateName(), m.Type.UpdateOneName()}
+	return []string{m.UpdateName(), m.UpdateOneName()}
 }
 
 // InputFieldDescriptor holds the information
@@ -241,8 +245,8 @@ func (f *InputFieldDescriptor) IsPointer() bool {
 
 // InputFields returns the list of fields in the input type.
 func (m *MutationDescriptor) InputFields() ([]*InputFieldDescriptor, error) {
-	fields := make([]*InputFieldDescriptor, 0, len(m.Type.Fields))
-	for _, f := range m.Type.Fields {
+	fields := make([]*InputFieldDescriptor, 0, len(m.Fields))
+	for _, f := range m.Fields {
 		ant, err := annotation(f.Annotations)
 		if err != nil {
 			return nil, err
@@ -267,8 +271,8 @@ func (m *MutationDescriptor) InputFields() ([]*InputFieldDescriptor, error) {
 // NOTE(giautm): This method should refactor to
 // return a list of InputFieldDescriptor.
 func (m *MutationDescriptor) InputEdges() ([]*gen.Edge, error) {
-	edges := make([]*gen.Edge, 0, len(m.Type.Edges))
-	for _, e := range m.Type.Edges {
+	edges := make([]*gen.Edge, 0, len(m.Edges))
+	for _, e := range m.Edges {
 		ant, err := annotation(e.Annotations)
 		if err != nil {
 			return nil, err
@@ -367,13 +371,93 @@ func filterFields(fields []*gen.Field, skip SkipMode) ([]*gen.Field, error) {
 	return filteredFields, nil
 }
 
+// fieldCollectedFor returns all fields that should be collected when the given GraphQL field name is queried.
+// This checks the CollectedFor annotation on all fields.
+func fieldCollectedFor(f *gen.Field) ([]string, error) {
+	ant, err := annotation(f.Annotations)
+	if err != nil || ant.Skip.Is(SkipType) || f.Sensitive() {
+		return nil, err
+	}
+	return ant.CollectedFor, nil
+}
+
+type fieldCollectorCase struct {
+	Mapping []string
+	Fields  []*gen.Field
+}
+
+// fieldCollectorCases groups ent fields by the GraphQL field names that should trigger their collection.
+// GraphQL names that collect the same set of ent fields are grouped into a single switch case.
+func fieldCollectorCases(fields []*gen.Field) ([]*fieldCollectorCase, error) {
+	collectorNames := func(f *gen.Field) ([]string, error) {
+		mapping, err := fieldMapping(f)
+		if err != nil {
+			return nil, err
+		}
+		collectedFor, err := fieldCollectedFor(f)
+		if err != nil {
+			return nil, err
+		}
+		names := append([]string(nil), mapping...)
+		for _, name := range collectedFor {
+			if !slices.Contains(names, name) {
+				names = append(names, name)
+			}
+		}
+		return names, nil
+	}
+	fieldSetKey := func(fs []*gen.Field) string {
+		constants := make([]string, len(fs))
+		for i, f := range fs {
+			constants[i] = f.Constant()
+		}
+		return strings.Join(constants, "|")
+	}
+	byGQL := make(map[string][]*gen.Field)
+	for _, f := range fields {
+		names, err := collectorNames(f)
+		if err != nil {
+			return nil, err
+		}
+		for _, name := range names {
+			byGQL[name] = append(byGQL[name], f)
+		}
+	}
+	groups := make(map[string]*fieldCollectorCase)
+	for name, fs := range byGQL {
+		key := fieldSetKey(fs)
+		if g := groups[key]; g != nil {
+			g.Mapping = append(g.Mapping, name)
+		} else {
+			groups[key] = &fieldCollectorCase{Fields: fs, Mapping: []string{name}}
+		}
+	}
+	collect := make([]*fieldCollectorCase, 0, len(groups))
+	for _, c := range groups {
+		slices.Sort(c.Mapping)
+		collect = append(collect, c)
+	}
+	slices.SortFunc(collect, func(a, b *fieldCollectorCase) int {
+		return strings.Compare(a.Mapping[0], b.Mapping[0])
+	})
+	return collect, nil
+}
+
 // OrderTerm is a struct that represents a single GraphQL order term.
 type OrderTerm struct {
-	GQL   string     // The GraphQL name of the field.
-	Type  *gen.Type  // The type that owns the field.
-	Field *gen.Field // Not nil if it is a type/edge field.
-	Edge  *gen.Edge  // Not nil if it is an edge field or count.
-	Count bool       // True if it is a count field.
+	// The type that owns the order field.
+	Owner *gen.Type
+	// The GraphQL name of the field.
+	GQL string
+	// The type that owns the field. For type fields, it equals to Owner.
+	// For edge fields, it equals to the underlying edge's type.
+	Type *gen.Type
+	// Not nil if it is a type/edge field.
+	Field *gen.Field
+	// Not nil if it is an edge field or count.
+	Edge *gen.Edge
+	// True if it is a count field.
+	Count bool
 }
 
 // IsFieldTerm returns true if the order term is a type field term.
@@ -393,7 +477,7 @@ func (o *OrderTerm) IsEdgeCountTerm() bool {
 
 // VarName returns the name of the variable holding the order term.
 func (o *OrderTerm) VarName() (string, error) {
-	switch prefix := paginationNames(o.Type.Name, false).OrderField; {
+	switch prefix := paginationNames(o.Owner.Name, false).OrderField; {
 	case o.IsFieldTerm():
 		return prefix + o.Field.StructField(), nil
 	case o.IsEdgeFieldTerm():
@@ -435,6 +519,7 @@ func orderFields(n *gen.Type) ([]*OrderTerm, error) {
 			return nil, fmt.Errorf("entgql: ordered field %s.%s must be comparable", n.Name, f.Name)
 		default:
 			terms = append(terms, &OrderTerm{
+				Owner: n,
 				GQL:   ant.OrderField,
 				Type:  n,
 				Field: f,
@@ -453,6 +538,7 @@ func orderFields(n *gen.Type) ([]*OrderTerm, error) {
 				return nil, fmt.Errorf("entgql: invalid order field %s defined on edge %s.%s: %w", ant.OrderField, n.Name, e.Name, err)
 			}
 			terms = append(terms, &OrderTerm{
+				Owner: n,
 				GQL:   ant.OrderField,
 				Type:  n,
 				Edge:  e,
@@ -472,6 +558,7 @@ func orderFields(n *gen.Type) ([]*OrderTerm, error) {
 				return nil, fmt.Errorf("entgql: order field %s defined on edge %s.%s was not found on its reference", ant.OrderField, n.Name, e.Name)
 			}
 			terms = append(terms, &OrderTerm{
+				Owner: n,
 				GQL:   ant.OrderField,
 				Edge:  e,
 				Type:  e.Type,
@@ -775,4 +862,19 @@ func skipMutationTemplate(g *gen.Graph) bool {
 		}
 	}
 	return true
+}
+
+func nodeImplementors(n *gen.Type) (ifaces []string, err error) {
+	ant, err := annotation(n.Annotations)
+	if err != nil {
+		return nil, err
+	}
+	if !ant.Skip.Is(SkipType) && !slices.Contains(ant.Implements, "Node") {
+		ifaces = append(ifaces, "Node")
+	}
+	return append(ifaces, ant.Implements...), nil
+}
+
+func nodeImplementorsVar(n *gen.Type) string {
+	return strings.ToLower(n.Name) + "Implementors"
 }

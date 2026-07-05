@@ -95,9 +95,19 @@ func Text(v string) predicate.Todo {
 	return predicate.Todo(sql.FieldEQ(FieldText, v))
 }
 
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldEQ(FieldName, v))
+}
+
 // Blob applies equality check predicate on the "blob" field. It's identical to BlobEQ.
 func Blob(v []byte) predicate.Todo {
 	return predicate.Todo(sql.FieldEQ(FieldBlob, v))
+}
+
+// Value applies equality check predicate on the "value" field. It's identical to ValueEQ.
+func Value(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldEQ(FieldValue, v))
 }
 
 // CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
@@ -270,6 +280,81 @@ func TextContainsFold(v string) predicate.Todo {
 	return predicate.Todo(sql.FieldContainsFold(FieldText, v))
 }
 
+// NameEQ applies the EQ predicate on the "name" field.
+func NameEQ(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldEQ(FieldName, v))
+}
+
+// NameNEQ applies the NEQ predicate on the "name" field.
+func NameNEQ(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldNEQ(FieldName, v))
+}
+
+// NameIn applies the In predicate on the "name" field.
+func NameIn(vs ...string) predicate.Todo {
+	return predicate.Todo(sql.FieldIn(FieldName, vs...))
+}
+
+// NameNotIn applies the NotIn predicate on the "name" field.
+func NameNotIn(vs ...string) predicate.Todo {
+	return predicate.Todo(sql.FieldNotIn(FieldName, vs...))
+}
+
+// NameGT applies the GT predicate on the "name" field.
+func NameGT(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldGT(FieldName, v))
+}
+
+// NameGTE applies the GTE predicate on the "name" field.
+func NameGTE(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldGTE(FieldName, v))
+}
+
+// NameLT applies the LT predicate on the "name" field.
+func NameLT(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldLT(FieldName, v))
+}
+
+// NameLTE applies the LTE predicate on the "name" field.
+func NameLTE(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldLTE(FieldName, v))
+}
+
+// NameContains applies the Contains predicate on the "name" field.
+func NameContains(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldContains(FieldName, v))
+}
+
+// NameHasPrefix applies the HasPrefix predicate on the "name" field.
+func NameHasPrefix(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldHasPrefix(FieldName, v))
+}
+
+// NameHasSuffix applies the HasSuffix predicate on the "name" field.
+func NameHasSuffix(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldHasSuffix(FieldName, v))
+}
+
+// NameIsNil applies the IsNil predicate on the "name" field.
+func NameIsNil() predicate.Todo {
+	return predicate.Todo(sql.FieldIsNull(FieldName))
+}
+
+// NameNotNil applies the NotNil predicate on the "name" field.
+func NameNotNil() predicate.Todo {
+	return predicate.Todo(sql.FieldNotNull(FieldName))
+}
+
+// NameEqualFold applies the EqualFold predicate on the "name" field.
+func NameEqualFold(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldEqualFold(FieldName, v))
+}
+
+// NameContainsFold applies the ContainsFold predicate on the "name" field.
+func NameContainsFold(v string) predicate.Todo {
+	return predicate.Todo(sql.FieldContainsFold(FieldName, v))
+}
+
 // BlobEQ applies the EQ predicate on the "blob" field.
 func BlobEQ(v []byte) predicate.Todo {
 	return predicate.Todo(sql.FieldEQ(FieldBlob, v))
@@ -348,6 +433,46 @@ func CustompIsNil() predicate.Todo {
 // CustompNotNil applies the NotNil predicate on the "customp" field.
 func CustompNotNil() predicate.Todo {
 	return predicate.Todo(sql.FieldNotNull(FieldCustomp))
+}
+
+// ValueEQ applies the EQ predicate on the "value" field.
+func ValueEQ(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldEQ(FieldValue, v))
+}
+
+// ValueNEQ applies the NEQ predicate on the "value" field.
+func ValueNEQ(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldNEQ(FieldValue, v))
+}
+
+// ValueIn applies the In predicate on the "value" field.
+func ValueIn(vs ...int) predicate.Todo {
+	return predicate.Todo(sql.FieldIn(FieldValue, vs...))
+}
+
+// ValueNotIn applies the NotIn predicate on the "value" field.
+func ValueNotIn(vs ...int) predicate.Todo {
+	return predicate.Todo(sql.FieldNotIn(FieldValue, vs...))
+}
+
+// ValueGT applies the GT predicate on the "value" field.
+func ValueGT(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldGT(FieldValue, v))
+}
+
+// ValueGTE applies the GTE predicate on the "value" field.
+func ValueGTE(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldGTE(FieldValue, v))
+}
+
+// ValueLT applies the LT predicate on the "value" field.
+func ValueLT(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldLT(FieldValue, v))
+}
+
+// ValueLTE applies the LTE predicate on the "value" field.
+func ValueLTE(v int) predicate.Todo {
+	return predicate.Todo(sql.FieldLTE(FieldValue, v))
 }
 
 // CategoryIDEQ applies the EQ predicate on the "category_id" field.
@@ -524,32 +649,15 @@ func HasSecretWith(preds ...predicate.VerySecret) predicate.Todo {
 
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Todo) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for _, p := range predicates {
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Todo(sql.AndPredicates(predicates...))
 }
 
 // Or groups predicates with the OR operator between them.
 func Or(predicates ...predicate.Todo) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for i, p := range predicates {
-			if i > 0 {
-				s1.Or()
-			}
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Todo(sql.OrPredicates(predicates...))
 }
 
 // Not applies the not operator on the given predicate.
 func Not(p predicate.Todo) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		p(s.Not())
-	})
+	return predicate.Todo(sql.NotPredicates(p))
 }

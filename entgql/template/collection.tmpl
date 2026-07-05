@@ -14,31 +14,28 @@ in the LICENSE file in the root directory of this source tree.
 {{ $gqlNodes := filterNodes $.Nodes (skipMode "type") }}
 
 import (
-	"github.com/99designs/gqlgen/graphql"
+	"entgo.io/contrib/entgql"
 	{{- range $n := $gqlNodes }}
 		"{{ $.Config.Package }}/{{ $n.Package }}"
 	{{- end }}
 )
 
-{{ range $node := $gqlNodes }}
-{{ $names := nodePaginationNames $node false }}
-{{ $name := $names.Node }}
-
-{{ $receiver := $node.Receiver }}
-{{ $query := $node.QueryName }}
+{{ range $node := $gqlNodes -}}
+{{- $query := $node.QueryName -}}
+{{- $receiver := $node.QueryReceiver -}}
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func ({{ $receiver }} *{{ $query }}) CollectFields(ctx context.Context, satisfies ...string) (*{{ $query }}, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
 		return {{ $receiver }}, nil
 	}
-	if err := {{ $receiver }}.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := {{ $receiver }}.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
 	return {{ $receiver }}, nil
 }
 
-func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	{{- $fields := filterFields $node.Fields (skipMode "type") }}
 	{{- $collects := fieldCollections (filterEdges $node.Edges (skipMode "type")) }}
@@ -59,6 +56,8 @@ func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, opCtx *gr
 			switch field.Name {
 				{{- range $i, $fc := $collects }}
 					{{- $e := $fc.Edge }}
+					{{- /* If the edge is unique, we inherit the cardinality of the parent. */}}
+					{{ $oneNode := "false" }}{{- if $e.Unique }}{{ $oneNode = "oneNode" }}{{ end }}
 					case {{ range $i, $value := $fc.Mapping }}{{ if $i }}, {{ end }}"{{ $value }}"{{ end }}:
 						var (
 							alias = field.Alias
@@ -81,8 +80,8 @@ func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, opCtx *gr
 							if query, err = pager.applyFilter(query); err != nil {
 								return err
 							}
-							ignoredEdges := !hasCollectedField(ctx, edgesField) && !hasCollectedField(ctx, itemsField)
-							if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+							ignoredEdges := !hasCollectedFieldFrom(field, opCtx, satisfies, edgesField) && !hasCollectedFieldFrom(field, opCtx, satisfies, itemsField)
+							if hasCollectedFieldFrom(field, opCtx, satisfies, totalCountField) || hasCollectedFieldFrom(field, opCtx, satisfies, pageInfoField) {
 								{{- /* Only add loadTotal query when needs */}}
 								hasPagination := args.limit != nil || args.offset != nil
 								if hasPagination || ignoredEdges {
@@ -108,30 +107,35 @@ func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, opCtx *gr
 								continue
 							}
 							pathNodes := append(path, edgesField, nodeField)
-							if field := collectedField(ctx, pathNodes...); field != nil {
-								if err := query.collectField(ctx, opCtx, *field, pathNodes, mayAddCondition(satisfies, "{{ $e.Type.Name }}")...); err != nil {
+							if edgesNode := collectedFieldFrom(field, opCtx, satisfies, edgesField, nodeField); edgesNode != nil {
+								if err := query.collectField(ctx, {{ $oneNode }}, opCtx, *edgesNode, pathNodes, mayAddCondition(satisfies, {{ nodeImplementorsVar $e.Type }})...); err != nil {
 									return err
 								}
 							}
 							pathItems := append(path, itemsField)
-							if field := collectedField(ctx, pathItems...); field != nil {
-								if err := query.collectField(ctx, opCtx, *field, pathItems, mayAddCondition(satisfies, "{{ $e.Type.Name }}")...); err != nil {
+							if itemsNode := collectedFieldFrom(field, opCtx, satisfies, itemsField); itemsNode != nil {
+								if err := query.collectField(ctx, {{ $oneNode }}, opCtx, *itemsNode, pathItems, mayAddCondition(satisfies, {{ nodeImplementorsVar $e.Type }})...); err != nil {
 									return err
 								}
 							}
 							if args.limit != nil && *args.limit > 0 {
-								{{- $fk := print $node.Package "." $fc.Edge.ColumnConstant }}
-								{{- if $e.M2M }}
-									{{- $i := 0 }}{{ if $e.IsInverse }}{{ $i = 1 }}{{ end }}
-									{{- $fk = print $node.Package "." $e.PKConstant "[" $i "]" }}
-								{{- end }}
-								modify := limitRows({{ $fk }}, *args.limit, pager.orderExpr(query))
-								query.modifiers = append(query.modifiers, modify)
+								{{- /* Limit per row is not required, as there is only node returned by the top query. */}}
+								if oneNode {
+									pager.applyOrder(query.Limit(*args.limit))
+								} else {
+									{{- $fk := print $node.Package "." $fc.Edge.ColumnConstant }}
+									{{- if $e.M2M }}
+										{{- $i := 0 }}{{ if $e.IsInverse }}{{ $i = 1 }}{{ end }}
+										{{- $fk = print $node.Package "." $e.PKConstant "[" $i "]" }}
+									{{- end }}
+									modify := entgql.LimitPerRow({{ $fk }}, *args.limit, pager.orderExpr(query))
+									query.modifiers = append(query.modifiers, modify)
+								}
 							} else {
 								query = pager.applyOrder(query)
 							}
 						{{- else }}
-							if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+							if err := query.collectField(ctx, {{ $oneNode }}, opCtx, field, path, mayAddCondition(satisfies, {{ nodeImplementorsVar $e.Type }})...); err != nil {
 								return err
 							}
 						{{- end }}
@@ -149,14 +153,14 @@ func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, opCtx *gr
 							}
 						{{- end }}
 				{{- end }}
-				{{- range $f := $fields }}
-					{{- with fieldMapping $f }}
-						case {{ range $i, $m := . }}{{ if $i }}, {{ end }}"{{ $m }}"{{ end }}:
-							if _, ok := fieldSeen[{{ $node.Package }}.{{ $f.Constant }}]; !ok {
-								selectedFields = append(selectedFields, {{ $node.Package }}.{{ $f.Constant }})
-								fieldSeen[{{ $node.Package }}.{{ $f.Constant }}] = struct{}{}
-							}
-					{{- end }}
+				{{- range $c := fieldCollectorCases $fields }}
+					case {{ range $i, $m := $c.Mapping }}{{ if $i }}, {{ end }}"{{ $m }}"{{ end }}:
+						{{- range $f := $c.Fields }}
+						if _, ok := fieldSeen[{{ $node.Package }}.{{ $f.Constant }}]; !ok {
+							selectedFields = append(selectedFields, {{ $node.Package }}.{{ $f.Constant }})
+							fieldSeen[{{ $node.Package }}.{{ $f.Constant }}] = struct{}{}
+						}
+						{{- end }}
 				{{- end }}
 				{{- if $fields }}
 					{{- if $node.HasOneFieldID -}}
@@ -180,19 +184,20 @@ func ({{ $receiver }} *{{ $query }}) collectField(ctx context.Context, opCtx *gr
 	return nil
 }
 
-{{ $order := $names.Order }}
-{{ $multiOrder := $node.Annotations.EntGQL.MultiOrder }}
-{{ $orderField := $names.OrderField }}
-{{ $filter := print "With" $name "Filter" }}
-{{ $paginateArg := print (camel $name) "PaginateArgs" }}
-{{ $newPaginateArg := print "new" $name "PaginateArgs" }}
-
+{{ $names := nodePaginationNames $node false -}}
+{{- $name := $names.Node -}}
+{{- $filter := print "With" $name "Filter" -}}
+{{- $paginateArg := print (camel $name) "PaginateArgs" -}}
+{{- $newPaginateArg := print "new" $name "PaginateArgs" -}}
+{{- $order := $names.Order -}}
+{{- $multiOrder := $node.Annotations.EntGQL.MultiOrder -}}
+{{- $orderField := $names.OrderField -}}
 type {{ $paginateArg }} struct {
 	limit, offset *int
 	opts []{{ print $name "PaginateOption" }}
 }
 
-func {{ $newPaginateArg }}(rv map[string]interface{}) *{{ $paginateArg }} {
+func {{ $newPaginateArg }}(rv map[string]any) *{{ $paginateArg }} {
 	args := &{{ $paginateArg }}{}
 	if rv == nil {
 		return args
@@ -209,10 +214,10 @@ func {{ $newPaginateArg }}(rv map[string]interface{}) *{{ $paginateArg }} {
 			{{- if $multiOrder }}
 				case []*{{ $order }}:
 					args.opts = append(args.opts, {{ print "With" $order }}(v))
-				case []interface{}:
+				case []any:
 					var orders []*{{ $order }}
 					for i := range v {
-						mv, ok := v[i].(map[string]interface{})
+						mv, ok := v[i].(map[string]any)
 						if !ok {
 							continue
 						}
@@ -232,7 +237,7 @@ func {{ $newPaginateArg }}(rv map[string]interface{}) *{{ $paginateArg }} {
 					}
 					args.opts = append(args.opts, {{ print "With" $order }}(orders))
 			{{- else }}
-				case map[string]interface{}:
+				case map[string]any:
 					var (
 						err1, err2 error
 						order = &{{ $order }}{Field: &{{ $orderField }}{}, Direction: entgql.OrderDirectionAsc}
@@ -273,38 +278,21 @@ const (
 	{{- end }}
 )
 
-func fieldArgs(ctx context.Context, whereInput interface{}, path ...string) map[string]interface{} {
-	fc := graphql.GetFieldContext(ctx)
-	if fc == nil {
+func fieldArgs(ctx context.Context, whereInput any, path ...string) map[string]any {
+	field := collectedField(ctx, path...)
+	if field == nil || field.Arguments == nil {
 		return nil
 	}
 	oc := graphql.GetOperationContext(ctx)
-	for _, name := range path {
-		var field *graphql.CollectedField
-		for _, f := range graphql.CollectFields(oc, fc.Field.Selections, nil) {
-			if f.Alias == name {
-				field = &f
-				break
-			}
-		}
-		if field == nil {
-			return nil
-		}
-		cf, err := fc.Child(ctx, *field)
-		if err != nil {
-			args := field.ArgumentMap(oc.Variables)
-			return unmarshalArgs(ctx, whereInput, args)
-		}
-		fc = cf
-	}
-	return fc.Args
+	args := field.ArgumentMap(oc.Variables)
+	return unmarshalArgs(ctx, whereInput, args)
 }
 
 // unmarshalArgs allows extracting the field arguments from their raw representation.
-func unmarshalArgs(ctx context.Context, whereInput interface{}, args map[string]interface{}) map[string]interface{} {
+func unmarshalArgs(ctx context.Context, whereInput any, args map[string]any) map[string]any {
 	for _, k := range []string{limitField, offsetField} {
 		v, ok := args[k]
-		if !ok {
+		if !ok || v == nil {
 			continue
 		}
 		i, err := graphql.UnmarshalInt(v)
@@ -321,41 +309,19 @@ func unmarshalArgs(ctx context.Context, whereInput interface{}, args map[string]
 	return args
 }
 
-func limitRows(partitionBy string, limit int, orderBy ...sql.Querier) func(s *sql.Selector) {
-	return func(s *sql.Selector) {
-		d := sql.Dialect(s.Dialect())
-		s.SetDistinct(false)
-		with := d.With("src_query").
-			As(s.Clone()).
-			With("limited_query").
-			As(
-				d.Select("*").
-					AppendSelectExprAs(
-						sql.RowNumber().PartitionBy(partitionBy).OrderExpr(orderBy...),
-						"row_number",
-					).
-					From(d.Table("src_query")),
-			)
-		t := d.Table("limited_query").As(s.TableName())
-		*s = *d.Select(s.UnqualifiedColumns()...).
-			From(t).
-			Where(sql.LTE(t.C("row_number"), limit)).
-			Prefix(with)
-	}
-}
-
 // mayAddCondition appends another type condition to the satisfies list
-// if condition is enabled (Node/Nodes) and it does not exist in the list.
-func mayAddCondition(satisfies []string, typeCond string) []string {
-	if len(satisfies) == 0 {
-		return satisfies
-	}
-	for _, s := range satisfies {
-		if typeCond == s {
-			return satisfies
+// if it does not exist in the list.
+func mayAddCondition(satisfies []string, typeCond []string) []string {
+Cond:
+	for _, c := range typeCond {
+		for _, s := range satisfies {
+			if c == s {
+				continue Cond
+			}
 		}
+		satisfies = append(satisfies, c)
 	}
-	return append(satisfies, typeCond)
+	return satisfies
 }
 {{ end }}
 
@@ -381,6 +347,13 @@ func mayAddCondition(satisfies []string, typeCond string) []string {
 			}
 			query.Where(func(s *sql.Selector) {
 				joinT := sql.Table({{ $.Package }}.{{ $e.TableConstant }})
+				{{- with $tmpls := matchTemplate "dialect/sql/query/eagerloading/join/*" }}
+					{{- range $tmpl := $tmpls }}
+						{{- with extend $ "Edge" $e "Builder" (print $.Name "Query") "Receiver" $receiver }}
+							{{- xtemplate $tmpl . }}
+						{{- end }}
+					{{- end }}
+				{{- end }}
 				s.Join(joinT).On(s.C({{ $edgeid }}), joinT.C({{ $.Package }}.{{ $e.PKConstant }}[{{ $fk1idx }}]))
 				s.Where(sql.InValues(joinT.C({{ $.Package }}.{{ $e.PKConstant }}[{{ $fk2idx }}]), ids...))
 				s.Select(joinT.C({{ $nodeid }}), sql.Count("*"))
@@ -426,7 +399,7 @@ func mayAddCondition(satisfies []string, typeCond string) []string {
 {{- end }}
 {{- define "dialect/sql/query/spec/internal_modify" }}
 	{{- if and ($.FeatureEnabled "sql/lock" | not) ($.FeatureEnabled "sql/modifier" | not) }}
-		{{- $receiver := pascal $.Scope.Builder | receiver }}
+		{{- $receiver := $.Scope.Receiver }}
 		if len({{ $receiver }}.modifiers) > 0 {
 			_spec.Modifiers = {{ $receiver }}.modifiers
 		}
@@ -438,8 +411,7 @@ func mayAddCondition(satisfies []string, typeCond string) []string {
 	loadTotal []func(context.Context, []*{{ $.Name }}) error
 {{- end }}
 {{ define "dialect/sql/query/all/nodes/namedges_load_total" }}
-	{{- $builder := pascal $.Scope.Builder }}
-	{{- $receiver := receiver $builder }}
+	{{- $receiver := $.Scope.Receiver }}
 	for i := range {{ $receiver }}.loadTotal {
 		if err := {{ $receiver }}.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err

@@ -32,6 +32,7 @@ import (
 	"entgo.io/contrib/entgql/internal/todo/ent/todo"
 	"entgo.io/contrib/entgql/internal/todo/ent/user"
 	"entgo.io/contrib/entgql/internal/todo/ent/verysecret"
+	"entgo.io/contrib/entgql/internal/todo/ent/workspace"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -91,7 +92,7 @@ var (
 	columnCheck sql.ColumnCheck
 )
 
-// columnChecker checks if the column exists in the given table.
+// checkColumn checks if the column exists in the given table.
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
@@ -104,6 +105,7 @@ func checkColumn(table, column string) error {
 			todo.Table:        todo.ValidColumn,
 			user.Table:        user.ValidColumn,
 			verysecret.Table:  verysecret.ValidColumn,
+			workspace.Table:   workspace.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

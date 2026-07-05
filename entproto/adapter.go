@@ -17,6 +17,7 @@ package entproto
 import (
 	"errors"
 	"fmt"
+	"math"
 	"path"
 	"path/filepath"
 	"strings"
@@ -204,7 +205,7 @@ func (a *Adapter) parse() error {
 
 func (a *Adapter) goPackageName(protoPkgName string) string {
 	// TODO(rotemtam): make this configurable from an annotation
-	entBase := a.graph.Config.Package
+	entBase := a.graph.Package
 	slashed := strings.ReplaceAll(protoPkgName, ".", "/")
 	return path.Join(entBase, "proto", slashed)
 }
@@ -387,7 +388,10 @@ func (a *Adapter) extractEdgeFieldDescriptor(source *gen.Type, e *gen.Edge) (*de
 		return nil, fmt.Errorf("entproto: edge %q has number 1 which is reserved for id", e.Name)
 	}
 
-	fieldNum := int32(edgeAnnotation.Number)
+	if num := int64(edgeAnnotation.Number); num > math.MaxInt32 || num < math.MinInt32 {
+		return nil, fmt.Errorf("value %v overflows int32", num)
+	}
+	fieldNum := int32(edgeAnnotation.Number) //nolint:gosec
 	fieldDesc := &descriptorpb.FieldDescriptorProto{
 		Number: &fieldNum,
 		Name:   &e.Name,
@@ -441,7 +445,7 @@ func toProtoEnumDescriptor(fld *gen.Field) (*descriptorpb.EnumDescriptorProto, e
 		})
 	}
 	for _, opt := range fld.Enums {
-		n := strings.ToUpper(snake(opt.Value))
+		n := strings.ToUpper(snake(NormalizeEnumIdentifier(opt.Value)))
 		if !enumAnnotation.OmitFieldPrefix {
 			n = strings.ToUpper(snake(fld.Name)) + "_" + n
 		}
@@ -461,7 +465,10 @@ func toProtoFieldDescriptor(f *gen.Field) (*descriptorpb.FieldDescriptorProto, e
 	if err != nil {
 		return nil, err
 	}
-	fieldNumber := int32(fann.Number)
+	if num := int64(fann.Number); num > math.MaxInt32 || num < math.MinInt32 {
+		return nil, fmt.Errorf("value %v overflows int32", num)
+	}
+	fieldNumber := int32(fann.Number) //nolint:gosec
 	if fieldNumber == 1 && strings.ToUpper(f.Name) != "ID" {
 		return nil, fmt.Errorf("entproto: field %q has number 1 which is reserved for id", f.Name)
 	}
@@ -515,9 +522,30 @@ func extractProtoTypeDetails(f *gen.Field) (fieldType, error) {
 }
 
 func extractJSONDetails(f *gen.Field) (fieldType, error) {
-	if f.Type.Ident == "[]string" {
+	switch f.Type.Ident {
+	case "[]string":
 		return fieldType{
 			protoType: descriptorpb.FieldDescriptorProto_TYPE_STRING,
+			repeated:  true,
+		}, nil
+	case "[]int32":
+		return fieldType{
+			protoType: descriptorpb.FieldDescriptorProto_TYPE_INT32,
+			repeated:  true,
+		}, nil
+	case "[]int64":
+		return fieldType{
+			protoType: descriptorpb.FieldDescriptorProto_TYPE_INT64,
+			repeated:  true,
+		}, nil
+	case "[]uint32":
+		return fieldType{
+			protoType: descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+			repeated:  true,
+		}, nil
+	case "[]uint64":
+		return fieldType{
+			protoType: descriptorpb.FieldDescriptorProto_TYPE_UINT64,
 			repeated:  true,
 		}, nil
 	}

@@ -107,7 +107,7 @@ func newServiceGenerator(plugin *protogen.Plugin, file *protogen.File, graph *ge
 	}
 	return &serviceGenerator{
 		GeneratedFile: g,
-		EntPackage:    protogen.GoImportPath(graph.Config.Package),
+		EntPackage:    protogen.GoImportPath(graph.Package),
 		File:          file,
 		Service:       service,
 		EntType:       typ,
@@ -125,6 +125,7 @@ func (g *serviceGenerator) generate() error {
 			"qualify": func(pkg, ident string) string {
 				return g.QualifiedGoIdent(protogen.GoImportPath(pkg).Ident(ident))
 			},
+			"protoIdentNormalize": entproto.NormalizeEnumIdentifier,
 			"statusErr": func(code, msg string) string {
 				return fmt.Sprintf("%s(%s, %q)",
 					g.QualifiedGoIdent(status.Ident("Error")),

@@ -67,7 +67,7 @@ func (b BigInt) MarshalGQL(w io.Writer) {
 func (b *BigInt) UnmarshalGQL(v interface{}) error {
 	if bi, ok := v.(string); ok {
 		b.Int = new(big.Int)
-		b.Int, ok = b.Int.SetString(bi, 10)
+		b.Int, ok = b.SetString(bi, 10)
 		if !ok {
 			return fmt.Errorf("invalid big number: %s", bi)
 		}
