@@ -64,6 +64,20 @@ var (
 	// MutationInputTemplate adds a template for generating Create<T>Input and Update<T>Input for each schema type.
 	MutationInputTemplate = parseT("template/mutation_input.tmpl").SkipIf(skipMutationTemplate)
 
+	// WherePTemplate adds a WhereP method to every query builder, letting callers
+	// append storage-level predicates without importing generated packages. The
+	// <T>WhereInput AddPredicates/Filter pattern builds on it, so it is part of
+	// the default template set. (Absorbed from the spread-ai/ent-templates repo.)
+	WherePTemplate = parseT("template/where_p.tmpl")
+
+	// FederationEntityTemplate emits an IsEntity() method (fedruntime.Entity) on
+	// every generated model. Opt-in for federated subgraphs:
+	//
+	//	entgql.WithTemplates(append(entgql.AllTemplates, entgql.FederationEntityTemplate)...)
+	//
+	// (Absorbed from the spread-ai/ent-templates repo.)
+	FederationEntityTemplate = parseT("template/gql_federation.tmpl")
+
 	// AllTemplates holds all templates for extending ent to support GraphQL.
 	AllTemplates = []*gen.Template{
 		CollectionTemplate,
@@ -73,6 +87,7 @@ var (
 		TransactionTemplate,
 		EdgeTemplate,
 		MutationInputTemplate,
+		WherePTemplate,
 	}
 
 	// TemplateFuncs contains the extra template functions used by entgql.
